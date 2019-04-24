@@ -24,6 +24,6 @@ Prototype AutoPilot script for OBS, interweaving video playlists.
 
 ## Thanks
 This prototype is built on the great work of others
-OBS Studio - https://github.com/obsproject/obs-studio
-OBS WebSocket Plugin - https://github.com/Palakis/obs-websocket
-OBS WebSocket JS Client - https://github.com/haganbmj/obs-websocket-js
+* OBS Studio - https://github.com/obsproject/obs-studio
+* OBS WebSocket Plugin - https://github.com/Palakis/obs-websocket
+* OBS WebSocket JS Client - https://github.com/haganbmj/obs-websocket-js
