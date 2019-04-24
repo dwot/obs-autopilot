@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="js/obs-websocket.js"></script>
+  </head>
+  <body>
+	<h1>Inserts M3U</h1>
+    <div id="inserts">
+		<input type="file" name="insertsFile" id="insertsFile">
+		<ul id="insertList"></ul>
+	</div>
+	
+	<h1>Main Program M3U</h1>
+    <div id="mainProgram">
+		<input type="file" name="mainsFile" id="mainsFile">
+		<ul id="mainsList"></ul>
+	</div>
+	
+	<h1>Scene / Source Settings</h1>
+    <div id="sceneSourceSettings">
+		Main Program Scene: <input id="mainProgramScene" placeholder="" value="Scene 2"></br>
+		Main Program Source: <input id="mainProgramSource" placeholder="" value="Media SRC B"></br>
+		</hr>
+		Inserts Program Scene: <input id="insertsProgramScene" placeholder="" value="Scene 1"></br>
+		Inserts Program Source: <input id="insertsProgramSource" placeholder="" value="Media SRC A"></br>
+	</div>
+  
+    <h1>Connect</h1>
+    <input id="address" placeholder="Address" value="127.0.0.1:4444"><button id="address_button">Connect</button>
+
+
+	<h1>Timer</h1>
+    <div id="timer"></div>
+	
+	
+
+    <script>
+		const obs = new OBSWebSocket();
+		const mainScene = document.getElementById('mainProgramScene');
+		const mainSource = document.getElementById('mainProgramSource');
+		const insertScene = document.getElementById('insertsProgramScene');
+		const insertSource = document.getElementById('insertsProgramSource');
+		
+		var insertsMap = new Map();
+		var mainsMap = new Map();
+
+		document.getElementById('insertsFile').onchange = function(){
+			const insertsList = document.getElementById('insertList');
+			while( insertsList.firstChild ){
+			  insertsList.removeChild( insertsList.firstChild );
+			}
+			var file = this.files[0];
+			var reader = new FileReader();
+			insertsMap = new Map();
+			reader.onload = function(progressEvent){
+				var lines = this.result.split('\n');
+				for(var line = 0; line < lines.length; line++){
+					var str = lines[line];
+					var file = '';
+					var duration = 0;
+					
+					if (str.startsWith('#EXTINF:')) {
+						duration = parseInt(str.substr(8, (str.indexOf(',')-8)), 10);
+						file = lines[line+1];
+						file = file.replace("\r","");
+						insertsMap.set(file,duration);
+						var result = file + ' - ' + duration;
+						var li = document.createElement("li");
+						li.appendChild(document.createTextNode(result));
+						insertsList.appendChild(li);
+					}	
+				}
+			};
+			reader.readAsText(file);
+		};
+		
+		document.getElementById('mainsFile').onchange = function(){
+			const mainsList = document.getElementById('mainsList');
+			while( mainsList.firstChild ){
+			  mainsList.removeChild( mainsList.firstChild );
+			}
+			var file = this.files[0];
+			var reader = new FileReader();
+			mainsMap = new Map();
+			reader.onload = function(progressEvent){
+				var lines = this.result.split('\n');
+				for(var line = 0; line < lines.length; line++){
+					var str = lines[line];
+					var file = '';
+					var duration = 0;
+					
+					if (str.startsWith('#EXTINF:')) {
+						duration = parseInt(str.substr(8, (str.indexOf(',')-8)), 10);
+						file = lines[line+1];
+						file = file.replace("\r","");
+						mainsMap.set(file,duration);
+						var result = file + ' - ' + duration;
+						var li = document.createElement("li");
+						li.appendChild(document.createTextNode(result));
+						mainsList.appendChild(li);
+					}
+				}
+			};
+			reader.readAsText(file);
+		};
+		
+
+		var timerCount = 0;
+		var isPlaying = false;
+		var currentItemDuration = 0;
+		var currentScene = 3;
+		var currAd = 0;
+		setInterval(
+		   () => {
+				const timerDiv = document.getElementById('timer');
+				if (isPlaying) {
+					timerCount++;
+					timerDiv.innerHTML = timerCount;
+					
+					if (timerCount >= currentItemDuration) {
+						if (currentScene == 2) {
+							//Play a PreRoll
+							currentScene = 1;
+							currAd++;
+							for (var insItem = 0; insItem < insertsMap.size; insItem++) {
+								if (currAd % insertsMap.size == insItem) {
+									var mapCount = 0;
+									insertsMap.forEach(function(value, key) {
+									  if (mapCount == insItem) {
+										obs.send('SetSourceSettings', {'sourceName': insertSource.value,'sourceSettings': {'loop': false,'playlist': [{'value':key}]}});
+										currentItemDuration = value;	
+									  }
+									  mapCount++;
+									});
+								}
+								
+							}
+							obs.send('SetCurrentScene', { 'scene-name': insertScene.value });
+						} else {
+							//Play a File
+							currentScene = 2;
+							currAd++;
+							for (var insItem = 0; insItem < mainsMap.size; insItem++) {
+								if (currAd % mainsMap.size == insItem) {
+									var mapCount = 0;
+									mainsMap.forEach(function(value, key) {
+									  if (mapCount == insItem) {
+										obs.send('SetSourceSettings', {'sourceName': mainSource.value,'sourceSettings': {'loop': false,'playlist': [{'value':key}]}});
+										currentItemDuration = value;	
+									  }
+									  mapCount++;
+									});
+								}
+								
+							}
+							obs.send('SetCurrentScene', { 'scene-name': mainScene.value });
+						}
+						timerCount = 0;
+						isPlaying = true;
+					}
+				} else {
+					timerDiv.innerHTML = "Not Active";
+				}
+			},
+		  1000
+		);
+
+		document.getElementById('address_button').addEventListener('click', e => {
+			const address = document.getElementById('address').value;
+			obs.connect({address: address});
+		});
+
+		obs.on('ConnectionOpened', () => {
+			obs.send('SetCurrentScene', { 'scene-name': insertScene.value });
+			currentScene = 1;
+			currentItemDuration = 0;
+			timerCount = 0;
+			isPlaying = true;
+			
+		});
+    </script>
+  </body>
+</html>
