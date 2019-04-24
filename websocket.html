@@ -26,7 +26,9 @@
 	</div>
   
     <h1>Connect</h1>
-    <input id="address" placeholder="Address" value="127.0.0.1:4444"><button id="address_button">Connect</button>
+    <input id="address" placeholder="Address" value="127.0.0.1:4444"></br>
+	<input id="password" type="password"></br>
+	<button id="address_button">Connect</button>
 
 
 	<h1>Timer</h1>
@@ -167,7 +169,8 @@
 
 		document.getElementById('address_button').addEventListener('click', e => {
 			const address = document.getElementById('address').value;
-			obs.connect({address: address});
+			const password = document.getElementById('password').value;
+			obs.connect({address: address, password: password});
 		});
 
 		obs.on('ConnectionOpened', () => {
