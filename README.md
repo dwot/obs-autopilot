@@ -18,6 +18,12 @@ Prototype AutoPilot script for OBS, interweaving video playlists.
 3. Select M3U playlist for Main Program
 * Parsed entries and duration in seconds should display
 4. Enter Scene and Source names for 2 VLC scenes / sources established in OBS in PreReqs
-5. Enter IP & Port of OBS Websocket plugin and hit connect
+5. Enter IP & Port of OBS Websocket plugin and password if required and hit connect
 * As each entry in mains playlist is completed, the next entry in inserts playlist will be loaded and played.
 * When the insert item has completed the next item in the mains playlist will be loaded and played.
+
+## Thanks
+This prototype is built on the great work of others
+OBS Studio - https://github.com/obsproject/obs-studio
+OBS WebSocket Plugin - https://github.com/Palakis/obs-websocket
+OBS WebSocket JS Client - https://github.com/haganbmj/obs-websocket-js
